@@ -63,8 +63,16 @@ RUN pip install --no-cache-dir \
 
 # ----- Audiocraft (Meta's music generation library) -----
 # Pinned to known-good commit to prevent upstream breakage
+# NOTE: audiocraft's transitive deps downgrade torch to 2.1, so we
+# re-pin torch+torchaudio immediately after to restore CUDA 12.4 builds.
 RUN pip install --no-cache-dir \
     "git+https://github.com/facebookresearch/audiocraft.git@896ec7c47f5e5d1e5aa1e4b260c4405328bf009d"
+
+# ----- Re-pin PyTorch 2.6 (audiocraft downgrades torch to 2.1) -----
+RUN pip install --no-cache-dir \
+    "torch~=2.6" \
+    "torchaudio~=2.6" \
+    --index-url https://download.pytorch.org/whl/cu124
 
 # ----- RunPod SDK + download tools + audio export -----
 RUN pip install --no-cache-dir \
@@ -75,8 +83,10 @@ RUN pip install --no-cache-dir \
 # Verify critical imports at build time
 RUN python3 -c "import runpod; print(f'runpod {runpod.__version__}')" && \
     python3 -c "import torch; print(f'torch {torch.__version__}, CUDA {torch.version.cuda}')" && \
+    python3 -c "assert '2.6' in torch.__version__, f'Expected torch 2.6, got {torch.__version__}'" && \
     python3 -c "import torchaudio; print(f'torchaudio {torchaudio.__version__}')" && \
     python3 -c "from audiocraft.models import MusicGen; print('audiocraft OK')" && \
+    python3 -c "from transformers import T5EncoderModel; print('T5EncoderModel OK')" && \
     python3 -c "import scipy; print(f'scipy {scipy.__version__}')" && \
     python3 -c "import scipy.io.wavfile; print('scipy.io.wavfile OK')"
 
