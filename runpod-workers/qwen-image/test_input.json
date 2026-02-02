@@ -1,0 +1,11 @@
+{
+    "input": {
+        "prompt": "A serene person meditating in a sunlit room, peaceful atmosphere, soft morning light, mindfulness concept, no text",
+        "negative_prompt": "text, words, letters, watermark, blurry, low quality, distorted",
+        "width": 928,
+        "height": 1664,
+        "num_inference_steps": 30,
+        "cfg_scale": 4.0,
+        "seed": 42
+    }
+}

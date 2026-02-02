@@ -1,0 +1,12 @@
+# Qwen-Image-2512 Worker Dependencies
+# diffusers from git: QwenImagePipeline not in any PyPI release yet
+# torch is pre-installed in the base image (2.9.1) — do NOT list it here
+runpod>=1.6.0
+git+https://github.com/huggingface/diffusers.git
+transformers>=4.57.0
+accelerate>=0.33.0
+safetensors>=0.4.0
+Pillow>=10.0.0
+huggingface_hub>=0.20.0
+sentencepiece
+protobuf
