@@ -10,7 +10,7 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       # Free disk space — removes ~25GB of pre-installed bloat

@@ -40,6 +40,7 @@ import os
 import traceback
 
 import runpod
+import scipy.io.wavfile as wavfile
 import torch
 
 # ---------------------------------------------------------------------------
@@ -50,12 +51,17 @@ MODELS_DIR = os.path.join(VOLUME_DIR, "models")
 MODEL_PATH = os.path.join(MODELS_DIR, "musicgen-medium")
 MODEL_REPO = "facebook/musicgen-medium"
 
-# Force HuggingFace cache onto the network volume
+# Force HuggingFace cache onto the network volume (guard against missing dir)
 HF_CACHE_DIR = os.path.join(VOLUME_DIR, "hf_cache")
 os.environ["HF_HOME"] = HF_CACHE_DIR
 os.environ["HF_HUB_CACHE"] = HF_CACHE_DIR
-os.environ["TMPDIR"] = os.path.join(VOLUME_DIR, "tmp")
-os.makedirs(os.environ["TMPDIR"], exist_ok=True)
+
+_tmpdir = os.path.join(VOLUME_DIR, "tmp")
+try:
+    os.makedirs(_tmpdir, exist_ok=True)
+    os.environ["TMPDIR"] = _tmpdir
+except OSError:
+    print(f"WARNING: Could not create {_tmpdir}, using system default TMPDIR")
 
 # Global model instance (loaded once per worker lifecycle)
 _model = None
@@ -64,13 +70,21 @@ _model = None
 # ---------------------------------------------------------------------------
 # Model download (runs once per network volume lifetime)
 # ---------------------------------------------------------------------------
+def _model_is_complete():
+    """Check that the model weights (not just config) are present."""
+    if not os.path.isdir(MODEL_PATH):
+        return False
+    # state_dict.bin is the main ~3.3GB weights file for musicgen-medium
+    weights = os.path.join(MODEL_PATH, "state_dict.bin")
+    config = os.path.join(MODEL_PATH, "config.json")
+    return os.path.exists(weights) and os.path.exists(config)
+
+
 def ensure_model():
     """Download model weights to network volume if not already present."""
     os.makedirs(MODELS_DIR, exist_ok=True)
 
-    # MusicGen stores a config.json at the repo root
-    config_path = os.path.join(MODEL_PATH, "config.json")
-    if os.path.exists(config_path):
+    if _model_is_complete():
         print(f"Model found at {MODEL_PATH}")
         return
 
@@ -86,6 +100,13 @@ def ensure_model():
         local_dir=MODEL_PATH,
         token=hf_token if hf_token else None,
     )
+
+    if not _model_is_complete():
+        raise RuntimeError(
+            f"Download finished but model files are incomplete at {MODEL_PATH}. "
+            "Check disk space on the network volume."
+        )
+
     print(f"Model saved to {MODEL_PATH}")
 
 
@@ -98,7 +119,13 @@ def get_model():
     if _model is not None:
         return _model
 
-    print("Loading MusicGen-medium model...")
+    if not torch.cuda.is_available():
+        raise RuntimeError(
+            "CUDA is not available. MusicGen requires a GPU. "
+            "Check that the NVIDIA driver and CUDA toolkit are installed."
+        )
+
+    print(f"Loading MusicGen-medium model on {torch.cuda.get_device_name(0)}...")
     from audiocraft.models import MusicGen
 
     _model = MusicGen.get_pretrained(MODEL_PATH)
@@ -161,8 +188,6 @@ def handler(event):
         audio_data = wav[0].cpu().numpy().squeeze()
 
         # Normalize float audio to int16 for WAV export
-        import scipy.io.wavfile as wavfile
-
         audio_int16 = (audio_data * 32767).astype("int16")
 
         buffer = io.BytesIO()
