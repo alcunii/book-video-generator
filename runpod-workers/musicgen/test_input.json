@@ -1,0 +1,10 @@
+{
+    "input": {
+        "prompt": "Calm ambient music with soft piano and gentle strings, peaceful meditation background, relaxing atmosphere, no vocals",
+        "duration": 30,
+        "temperature": 1.0,
+        "top_k": 250,
+        "top_p": 0.0,
+        "seed": 42
+    }
+}
