@@ -10,7 +10,7 @@ Model: Qwen-Image-2512 (~20B params, BF16, ~55 GB on disk)
   - Text encoder: Qwen2.5-VL-7B-Instruct (~14 GB)
   - Diffusion transformer: MMDiT (~26 GB)
   - VAE: (~0.5 GB)
-Target GPU: RTX 4090 (24 GB) with enable_model_cpu_offload()
+Target GPU: RTX 4090 (24 GB) with enable_sequential_cpu_offload()
 
 API contract (matches runpod_client.py / Agent 04):
 
