@@ -82,8 +82,7 @@ RUN pip install --no-cache-dir \
 
 # Verify critical imports at build time
 RUN python3 -c "import runpod; print(f'runpod {runpod.__version__}')" && \
-    python3 -c "import torch; print(f'torch {torch.__version__}, CUDA {torch.version.cuda}')" && \
-    python3 -c "assert '2.6' in torch.__version__, f'Expected torch 2.6, got {torch.__version__}'" && \
+    python3 -c "import torch; assert '2.6' in torch.__version__, torch.__version__; print(f'torch {torch.__version__}, CUDA {torch.version.cuda}')" && \
     python3 -c "import torchaudio; print(f'torchaudio {torchaudio.__version__}')" && \
     python3 -c "from audiocraft.models import MusicGen; print('audiocraft OK')" && \
     python3 -c "from transformers import T5EncoderModel; print('T5EncoderModel OK')" && \
